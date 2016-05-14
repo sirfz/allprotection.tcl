@@ -1210,7 +1210,7 @@ proc load {{b bind}} {
   $b dcc n|n ap:$apdccb "${nsc}::cmd $apdccb"
  }
  if {$b == "bind"} {
-  rd; variable logkbs
+  rd; variable logkbs; variable _VERSION
   foreach c [channels] { init $c }
   if {![info exists logkbs(logs)] && $logkbs(do)} {
    lappend logkbs(logs) "\$Log started [ctime [unixtime]]\$"
@@ -2771,7 +2771,7 @@ proc aplog str {
 }
 
 proc unload type {
- variable logkbs; variable antispam
+ variable logkbs; variable antispam; variable _VERSION
  foreach t {timer utimer} {
   foreach ti [${t}s] {
    if {[string match [namespace current]::* [lindex $ti 1]]} {kill$t [lindex $ti 2]}
