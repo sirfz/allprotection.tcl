@@ -1,7 +1,7 @@
-###########################[ ALL PROTECTION 4.9b ]###########################
+###########################[ ALL PROTECTION 4.9b2 ]##########################
 #                                                                           #
 # Author  : Opposing a.k.a Sir_Fz (Fayez Zouheiry)                          #
-# Version : 4.9b                                                            #
+# Version : 4.9b2                                                           #
 # Released: May 14, 2016                                                    #
 # Source:   https://github.com/sirfz/allprotection.tcl                      #
 ##                                                                          #
@@ -48,6 +48,8 @@
 #         - Used checkbcd proc by Marcel (edited by me).                    #
 #                                                                           #
 # History:                                                                  #
+#         - 4.9b2: fixed bug introduced in 4.9b regarding clones count in   #
+#           kick messages.
 #         - 4.9b: Added bk punishment (ban then kick). Code formatting and  #
 #           cleanup + some optimizations.                                   #
 #         - 4.8: Updated contact information and LICENSE file. Centralized  #
@@ -2285,24 +2287,24 @@ proc privl t {
 }
 
 proc _k {jn c km bti ccVar {doIncr 1}} {
-    # returns 1 if ccVar has been incremented
+    # returns 0 if ccVar has been incremented
     if {[onchan $jn $c] && ![punishing k:$jn:$c]} {
         upvar 1 $ccVar cc
         putquick "KICK $c $jn :[clonemap [mapall $km $c $bti] [expr {$doIncr?[incr cc]:$cc}]]"
-        return 1
+        return 0
     }
-    return 0
+    return 1
 }
 
 proc _b {jn ju c km bty bti ccVar arbVar {doIncr 1}} {
-    # returns 1 if ccVar has been incremented
+    # returns 0 if ccVar has been incremented
     upvar 1 $arbVar arb
     if {[info exists arb([set bm [masktype $jn!$ju $bty]])] || [punishing b:$bm:$c]} {return}
     variable banthruX; variable ::max-bans
     if {$banthruX(do)==2 || ($banthruX(do) && [llength [chanbans $c]] >= ${max-bans})} {
         upvar 1 $ccVar cc
         putquick [mapXcmd $banthruX(cmd) $jn $ju $c [clonemap [mapall $km $c $bti] [expr {$doIncr?[incr cc]:$cc}]] $bty $bti]
-        return 1
+        return 0
     } {
         queue $c $bm
         if {$bti > 0 && [istimer "pushmode $c -b $bm"] == ""} {
@@ -2310,7 +2312,7 @@ proc _b {jn ju c km bty bti ccVar arbVar {doIncr 1}} {
         }
         set arb($bm) 1
     }
-    return 0
+    return 1
 }
 
 proc k {nl c km bty bti klm kty kti wm} {
