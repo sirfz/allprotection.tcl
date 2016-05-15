@@ -57,6 +57,7 @@ Users with **+f** and **+mo** flags are exempted by default from any punishment.
     # k: Kick offender
     # b: Ban offender
     # kb: Kick + Ban offender
+    # bk: Ban + Kick offender
     # kl: KLine offender
     # kil: Kill offender
     #
