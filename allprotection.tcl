@@ -161,7 +161,7 @@ variable declr
 foreach declr {textl textc notcl notcc capsp repeatf codesf adexempts adwords greetexempts adv antispam bwords
     swear ctcpf massdeop massdeop masskick massb joinflood pmsgf revdoor nickflood eclones bnick bnicks drone
     bident bidents droneexempts bchans bchan bctcrs bctcr apfp ptextl ptextc pnotil pnotic pctcpf NumKicks apudef
-    apqueue banthruX ap:udefs logkbs btclocked kckcount cbcd serv kline kcfop punishments} { variable $declr }
+    apqueue banthruX ap:udefs logkbs btclocked kckcount cbcd serv kline kcfop} { variable $declr }
 unset declr
 
 # Do you want your bot to queue bans? set here the time in seconds before dumping bans:
@@ -1236,6 +1236,7 @@ proc load {{b bind}} {
 }
 
 proc joins {flood nick uhost hand chan {nn ""}} {
+    if {$nn != ""} {set nick $nn}
     if {[isbotnick $nick]} {init $chan ; return 0}
     if {[set chan [string tolower $chan]] == "*" || [invalid:apc $nick $hand $chan]} {return 0}
     if {$flood != "bchans" && ![vcg $chan ap:$flood]} {return 0}
@@ -1576,15 +1577,13 @@ proc nicks {flood nick uhost hand chan nn} {
     if {[string first # $chan] != 0 || [invalid:apc $nn $hand [set chan [string tolower $chan]]]} {return 0}
     if {![vcg $chan ap:$flood]} {return 0}
     foreach {off btime pmeth btype} [set cgot [split [channel get $chan ap:$flood]]] {break}
+    foreach {o s} [cgsplit $off] {break}
+    if {[invalid:apf $o $s]} {return 0}
     switch -- $flood {
         "nickf" {
-            foreach {o s} [cgsplit $off] {break}
-            if {[invalid:apf $o $s]} {return 0}
-            checkf $s $o nckflood:[string tolower $uhost:$chan] $uhost $chan $pmeth $nick {$o changes} $btype $btime nickflood
+            checkf $s $o nckflood:[string tolower $uhost:$chan] $uhost $chan $pmeth $nn {$o changes} $btype $btime nickflood
         }
         "bnickf" {
-            foreach {o s} [cgsplit $off] {break}
-            if {[invalid:apf $o $s]} {return 0}
             checklc $s bnickc:$chan $o $chan [join [lrange $cgot 1 end-1]] [lindex $cgot end] nick
         }
     }
@@ -2286,25 +2285,23 @@ proc privl t {
     }
 }
 
-proc _k {jn c km bti ccVar {doIncr 1}} {
+proc _k {jn c km bti {cc {incr cc}}} {
     # returns 0 if ccVar has been incremented
     if {[onchan $jn $c] && ![punishing k:$jn:$c]} {
-        upvar 1 $ccVar cc
-        putquick "KICK $c $jn :[clonemap [mapall $km $c $bti] [expr {$doIncr?[incr cc]:$cc}]]"
-        return 0
+        putquick "KICK $c $jn :[clonemap [mapall $km $c $bti] [uplevel 1 [split $cc]]]"
+        return {set cc}
     }
-    return 1
+    return {incr cc}
 }
 
-proc _b {jn ju c km bty bti ccVar arbVar {doIncr 1}} {
+proc _b {jn ju c km bty bti arbVar {cc {incr cc}}} {
     # returns 0 if ccVar has been incremented
     upvar 1 $arbVar arb
     if {[info exists arb([set bm [masktype $jn!$ju $bty]])] || [punishing b:$bm:$c]} {return}
     variable banthruX; variable ::max-bans
     if {$banthruX(do)==2 || ($banthruX(do) && [llength [chanbans $c]] >= ${max-bans})} {
-        upvar 1 $ccVar cc
-        putquick [mapXcmd $banthruX(cmd) $jn $ju $c [clonemap [mapall $km $c $bti] [expr {$doIncr?[incr cc]:$cc}]] $bty $bti]
-        return 0
+        putquick [mapXcmd $banthruX(cmd) $jn $ju $c [clonemap [mapall $km $c $bti] [uplevel 1 $cc]] $bty $bti]
+        return {set cc}
     } {
         queue $c $bm
         if {$bti > 0 && [istimer "pushmode $c -b $bm"] == ""} {
@@ -2312,34 +2309,34 @@ proc _b {jn ju c km bty bti ccVar arbVar {doIncr 1}} {
         }
         set arb($bm) 1
     }
-    return 1
+    return {incr cc}
 }
 
 proc k {nl c km bty bti klm kty kti wm} {
     set cc 0
     foreach {jn ju} $nl {
-        _k $jn $c $km 0 cc
+        _k $jn $c $km 0
     }
 }
 
 proc b {nl c km bty bti klm kty kti wm} {
     set cc 0
     foreach {jn ju} $nl {
-        _b $jn $ju $c $km $bty $bti cc arb
+        _b $jn $ju $c $km $bty $bti arb
     }
 }
 
 proc kb {nl c km bty bti klm kty kti wm} {
     set cc 0
     foreach {jn ju} $nl {
-        _b $jn $ju $c $km $bty $bti cc arb [_k $jn $c $km $bti cc]
+        _b $jn $ju $c $km $bty $bti arb [_k $jn $c $km $bti]
     }
 }
 
 proc bk {nl c km bty bti klm kty kti wm} {
     set cc 0
     foreach {jn ju} $nl {
-        _k $jn $c $km $bti cc [_b $jn $ju $c $km $bty $bti cc arb]
+        _k $jn $c $km $bti [_b $jn $ju $c $km $bty $bti arb]
     }
 }
 
@@ -2387,18 +2384,9 @@ proc kil {nl c km bty bti klm kty kti wm} {
     }
 }
 
-proc v {nl c km bty bti klm kti wm} {}
-
-set punishments(v) v
-set punishments(k) k
-set punishments(b) b
-set punishments(kb) kb
-set punishments(bk) bk
-set punishments(kl) kl
-set punishments(kil) kil
 
 proc punish {pm nl c km wm bty bti klm kti kty fv} {
-    variable pwait; variable kline; variable ptrig; variable punishments
+    variable pwait; variable kline; variable ptrig
     if {$kti < 0} { set kti $kline(time) }
     set fv $c:$fv
     if {![info exists ptrig($fv)] || [unixtime]-[lindex $ptrig($fv) 1] > $pwait} {
@@ -2408,10 +2396,15 @@ proc punish {pm nl c km wm bty bti klm kti kty fv} {
     set ol [llength [split $pm :]]
     if {$o > $ol - 1} { set o [expr {$ol - 1}] }
     pcount $pwait ptrig($fv)
-    if {[catch {set p punishments([string tolower [lindex [split $pm :] $o]])} errMsg]} {
-        error "\002AP\002: Punishment method, must be either v, w, k, b, kb, bk, kl or kil: $errMsg"
+    switch -- [set p [string tolower [lindex [split $pm :] $o]]] {
+        "k" - "b" - "kb" - "bk" - "w" - "kl" - "kil" {
+            $p $nl $c $km $bty $bti $klm $kty $kti $wm
+        }
+        "v" { }
+        default {
+            error "\002AP\002: Invalid punishment \002$p\002, must be one of v, w, k, b, kb, bk, kl, kil"
+        }
     }
-    $p $nl $c $km $bty $bti $klm $kty $kti $wm
     return 0
 }
 
@@ -2585,11 +2578,12 @@ proc seqflood {f o s n u c pm bty bti sla} {
     variable following
     if {[invalid:apf $o $s]} {return 0}
     set uhc $f:[string tolower $u:$c]
+    set myo ""
     if {[regexp {textc|notcc} $f]} {
         if {[info exists following($uhc)]} {set myo [lindex $following($uhc) 0]}
-        set i $sla ; set rsn {$myo chars}
+        set i $sla; set rsn {$myo chars}
     } {set i 1; set rsn {$o lines}}
-    checkf $s $o $uhc $u $c $pm $n $rsn $bty $bti $f $i [expr {[info exists myo]?$myo:""}]
+    checkf $s $o $uhc $u $c $pm $n $rsn $bty $bti $f $i $myo
 }
 
 proc follow {s fv pun {v 1} {ty 0}} {
