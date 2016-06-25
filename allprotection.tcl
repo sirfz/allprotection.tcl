@@ -1,4 +1,4 @@
-###########################[ ALL PROTECTION 4.9b2 ]##########################
+###########################[ ALL PROTECTION 4.9b3 ]##########################
 #                                                                           #
 # Author  : Opposing a.k.a Sir_Fz (Fayez Zouheiry)                          #
 # Version : 4.9b2                                                           #
@@ -48,8 +48,10 @@
 #         - Used checkbcd proc by Marcel (edited by me).                    #
 #                                                                           #
 # History:                                                                  #
+#         - 4.9b3: bad nicks on nick-change punishment fixed. fixed         #
+#           punishment execution. Minor optimizations.                      #
 #         - 4.9b2: fixed bug introduced in 4.9b regarding clones count in   #
-#           kick messages.
+#           kick messages.                                                  #
 #         - 4.9b: Added bk punishment (ban then kick). Code formatting and  #
 #           cleanup + some optimizations.                                   #
 #         - 4.8: Updated contact information and LICENSE file. Centralized  #
@@ -1140,7 +1142,7 @@ set pctcpf(punish) 4:20
 ######################################################################
 # Code starts here, please do not edit anything unless you know TCL: #
 # __________________________________________________________________ #
-variable _VERSION "4.9b"
+variable _VERSION "4.9b3"
 
 proc istimer {arg {t timers}} {
     set a ""
