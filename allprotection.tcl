@@ -3,7 +3,7 @@
 # Author  : Opposing a.k.a Sir_Fz (Fayez Zouheiry)                          #
 # Version : 4.8                                                             #
 # Released: May 11, 2016                                                    #
-# Source:   https://github.com/sirfz/allprotection                          #
+# Source:   https://github.com/sirfz/allprotection.tcl                      #
 ##                                                                          #
 # Description: Has all kinds of channel protections + Botnet channel flood  #
 #              protections and private protections.                         #
@@ -91,7 +91,7 @@
 #         - 4.6b1: Major coding changes, added bad chans protections + bug  #
 #           fixes.                                                          #
 #                                                                           #
-# Report bugs/suggestions at https://github.com/sirfz/allprotection         #
+# Report bugs/suggestions at https://github.com/sirfz/allprotection.tcl     #
 #                                                                           #
 # Copyright © 2005-2016 Opposing (aka Sir_Fz)                               #
 #                                                                           #
