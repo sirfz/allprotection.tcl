@@ -1,8 +1,8 @@
-###########################[ ALL PROTECTION 4.9b3 ]##########################
+###########################[ ALL PROTECTION 4.9b4 ]##########################
 #                                                                           #
 # Author  : Opposing a.k.a Sir_Fz (Fayez Zouheiry)                          #
-# Version : 4.9b2                                                           #
-# Released: May 14, 2016                                                    #
+# Version : 4.9b4                                                           #
+# Released: September 08, 2016                                              #
 # Source:   https://github.com/sirfz/allprotection.tcl                      #
 ##                                                                          #
 # Description: Has all kinds of channel protections + Botnet channel flood  #
@@ -48,6 +48,7 @@
 #         - Used checkbcd proc by Marcel (edited by me).                    #
 #                                                                           #
 # History:                                                                  #
+#         - 4.9b4: Eggdrop 1.8 compatibility (working Antispam bot).        #
 #         - 4.9b3: bad nicks on nick-change punishment fixed. fixed         #
 #           punishment execution. Minor optimizations.                      #
 #         - 4.9b2: fixed bug introduced in 4.9b regarding clones count in   #
@@ -118,10 +119,6 @@
 #                                                                           #
 #############################################################################
 #
-##############################
-# Configurations start here: #
-# __________________________ #
-
 
 ########################
 #   SETTINGS & iNFO    #
@@ -158,13 +155,29 @@
 # You can change the name of the namespace (AllProtection).
 namespace eval AllProtection {
 
-# Basic declarations: (don't touch)
+## Basic declarations: (don't touch)
 variable declr
 foreach declr {textl textc notcl notcc capsp repeatf codesf adexempts adwords greetexempts adv antispam bwords
     swear ctcpf massdeop massdeop masskick massb joinflood pmsgf revdoor nickflood eclones bnick bnicks drone
     bident bidents droneexempts bchans bchan bctcrs bctcr apfp ptextl ptextc pnotil pnotic pctcpf NumKicks apudef
     apqueue banthruX ap:udefs logkbs btclocked kckcount cbcd serv kline kcfop} { variable $declr }
 unset declr
+# Eggdrop version compatibility settings
+variable _EGGDROP_1_8 1080000
+if {$::numversion >= $_EGGDROP_1_8} {
+    variable _vhost4 $::vhost4
+    variable _vhost6 $::vhost6
+    variable _hostname $_vhost4
+} {
+    variable _vhost4 ${::my-ip}
+    variable _vhost6 "" 
+    variable _hostname ${::my-hostname}
+}
+## Basic declaraions complete
+
+##############################
+# Configurations start here: #
+# __________________________ #
 
 # Do you want your bot to queue bans? set here the time in seconds before dumping bans:
 # NOTE: 0 means the bot will set the ban immediately
@@ -514,15 +527,23 @@ lappend ap:udefs {ap:antispam "- + 10 10"}
 # AntiSpamBot basic settings
 # You can edit all these settings as you wish
 # example: set antispam(nick) AntiSpamBot
-set antispam(nick) $altnick
-set antispam(altnick) ${altnick}1
+set antispam(nick) $::altnick
+set antispam(altnick) ${::altnick}1
 # Antispam ident & real name
 set antispam(user) AP
 set antispam(realname) "AllProtection Anti-Spam"
-# example: set antispam(ip) 127.0.0.1
-set antispam(ip) ${my-ip}
-# example: set antispam(host) my.lame.vhost.net
-set antispam(host) ${my-hostname}
+
+##
+# The following settings specify the desired vhost for your forked Antispam bot.
+# Uncomment and edit these settings only if you wish to use settings other than
+# you Eggdrop's defaults.
+##
+# Antispam bot's vhost (ipv4). Example: set antispam(vhost4) 127.0.0.1
+#set antispam(vhost4) $_vhost4
+# ipv6 (Eggdrop >= v1.8)
+#set antispam(vhost6) $_vhost6
+# hostname example: set antispam(hostname) my.lame.vhost.net (Eggdrop < v1.8)
+#set antispam(hostname) $_hostname
 
 # Ban spammer in all channels or only in channels it's in? (0: It's in, 1: All)
 set antispam(banall) 1
@@ -1142,7 +1163,7 @@ set pctcpf(punish) 4:20
 ######################################################################
 # Code starts here, please do not edit anything unless you know TCL: #
 # __________________________________________________________________ #
-variable _VERSION "4.9b3"
+variable _VERSION "4.9b4"
 
 proc istimer {arg {t timers}} {
     set a ""
@@ -1528,7 +1549,7 @@ proc parts {flood nick uhost hand chan arg} {
     foreach {off btime pmeth btype} [set cgot [split [channel get $chan ap:$flood]]] {break}
     switch -- $flood {
         "revdoor" {
-            variable revdoor ; variable banthruX ;  variable ::max-bans
+            variable revdoor ; variable banthruX ; variable ::max-bans
             if {![string is integer $off] || $off <= 0} {return 0}
             if {[set gcj [getchanjoin $nick $chan]] >= [set ut [unixtime]]-$off} {
                 if {[vcg $chan ap:brevdoor]} {
@@ -1823,8 +1844,52 @@ proc core {m h args} {
 }
 
 set antispam(next) -1
-set antispam(tip) ${my-ip}
-set antispam(thost) ${my-hostname}
+set antispam(tvhost4) $_vhost4
+set antispam(tvhost6) $_vhost6
+set antispam(thostname) $_hostname
+
+if {${::numversion} >= $_EGGDROP_1_8} {
+    # Eggdrop >= 1.8
+    proc set_vhosts {} {
+        variable antispam
+        if {[info exists antispam(vhost4)]} {
+            set ::vhost4 $antispam(vhost4)
+        }
+        if {[info exists antispam(vhost6)]} {
+            set ::vhost6 $antispam(vhost6)
+        }
+    }
+    proc reset_vhosts {} {
+        variable antispam
+        if {$::vhost4 != $antispam(tvhost4)} {
+            set ::vhost4 $antispam(tvhost4)
+        }
+        if {$::vhost6 != $antispam(tvhost6)} {
+            set ::vhost4 $antispam(tvhost4)
+        }
+    }
+} {
+    # Eggdrop < 1.8
+    proc set_vhosts {} {
+        variable antispam
+        if {[info exists antispam(vhost4)]} {
+            set {::my-ip} $antispam(vhost4)
+        }
+        if {[info exists antispam(hostname)]} {
+            set {::my-hostname} $antispam(hostname)
+        }
+    }
+    proc reset_vhosts {} {
+        variable antispam
+        if {${::my-ip} != $antispam(tvhost4)} {
+            set {::my-ip} $antispam(tvhost4)
+        }
+        if {${::my-hostname} != $antispam(thostname)} {
+            set {::my-hostname} $antispam(thostname)
+        }
+    }
+}
+
 
 proc antispamcore {m h args} {
     variable antispam; variable Sec
@@ -1834,7 +1899,7 @@ proc antispamcore {m h args} {
         foreach {s p} [split [lindex [lindex $::servers [expr {[incr antispam(next)]%[llength $::servers]}]] 0] :] {break}
         foreach c [channels] {
             if {[vcg $c ap:antispam] && [lindex [split [channel get $c ap:antispam]] 0] == "+"} {
-                set ::my-ip $antispam(ip); set ::my-hostname $antispam(host)
+                set_vhosts
                 control [connect $s $p] [namespace current]::antispambot
                 putlog "\002AP\002: AntiSpamBot: Connecting to $s:$p..."
                 break
@@ -1866,7 +1931,7 @@ proc antispamcore {m h args} {
 
 proc antispambot {idx arg} {
     variable antispam; variable adv; variable greetexempts; variable antiSpamOnline
-    if {${::my-ip} != $antispam(tip)} {set ::my-hostname $antispam(thost); set ::my-ip $antispam(tip)}
+    reset_vhosts
     if {$arg == ""} {
         if {[info exists antispam(idx)]} {unset antispam(idx)}
         if {[info exists antispam(cnick)]} {unset antispam(cnick)}
