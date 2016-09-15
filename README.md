@@ -8,8 +8,8 @@ This Eggdrop script was first conceived some time around 2005 and has since deve
 - text floods (action or msg)
 - repeat floods
 - notice floods
-- codes floods
-- ads, bad words, and private spam
+- codes/caps floods
+- ads, bad words, and private spam (including part messages)
 - bad nicks/idents (on join and change)
 - join floods
 - revolving door (fly-bys)
@@ -33,6 +33,7 @@ This Eggdrop script was first conceived some time around 2005 and has since deve
 - mass revolving door floods.
 - mass part msg floods.
 - mass nick floods.
+- mass codes floods.
 
 ### Private flood protections
 - Private text floods.

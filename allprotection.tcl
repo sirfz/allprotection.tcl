@@ -49,8 +49,8 @@
 #                                                                           #
 # History:                                                                  #
 #         - 4.9b4: Eggdrop 1.8 compatibility (working Antispam bot).        #
-#         - 4.9b3: bad nicks on nick-change punishment fixed. fixed         #
-#           punishment execution. Minor optimizations.                      #
+#         - 4.9b3: bad nicks/nicks flood on nick-change punishment fixed.   #
+#           Fixed punishment execution. Minor optimizations.                #
 #         - 4.9b2: fixed bug introduced in 4.9b regarding clones count in   #
 #           kick messages.                                                  #
 #         - 4.9b: Added bk punishment (ban then kick). Code formatting and  #
